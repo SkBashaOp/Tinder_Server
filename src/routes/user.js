@@ -66,10 +66,9 @@ userRouter.get("/user/feed", userAuth, async (req, res) => {
 
     const skip = (page - 1) * limit;
 
-    // Only exclude users with active/permanent statuses — ignored users can reappear
+    // Exclude users where ANY connection request exists (any swipe direction/status)
     const connectionRequests = await ConnectionRequestModel.find({
       $or: [{ fromUserId: loggedInUser._id }, { toUserId: loggedInUser._id }],
-      status: { $in: ["interested", "accepted", "rejected"] },
     }).select("fromUserId toUserId");
 
     const hideUsersFromFeed = new Set();
