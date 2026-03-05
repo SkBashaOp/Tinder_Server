@@ -7,7 +7,7 @@ const userRouter = express.Router();
 const USER_POPULATE_DATA =
   "firstName lastName age gender about skills photoUrl"; // or ["firstName" "lastName" "age" "gender" "about" "skills"]
 
-userRouter.get("/user/request/received", userAuth, async (req, res) => {
+userRouter.get("/user/request/received", userAuth, async (req, res, next) => {
   try {
     const loggedInUser = req.user;
     const allReceivedRequest = await ConnectionRequestModel.find({
@@ -16,11 +16,11 @@ userRouter.get("/user/request/received", userAuth, async (req, res) => {
     }).populate("fromUserId", USER_POPULATE_DATA);
     res.json({ message: "Fetch request data!", allReceivedRequest });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    next(error);
   }
 });
 
-userRouter.get("/user/request/accepted", userAuth, async (req, res) => {
+userRouter.get("/user/request/accepted", userAuth, async (req, res, next) => {
   try {
     const loggedInUser = req.user;
     const allAcceptedRequest = await ConnectionRequestModel.find({
@@ -40,17 +40,18 @@ userRouter.get("/user/request/accepted", userAuth, async (req, res) => {
       ])
       .populate("toUserId", USER_POPULATE_DATA);
 
-    const data = allAcceptedRequest.map((row) => {
-      if (row.fromUserId._id.toString() === loggedInUser._id.toString()) {
-        return row.toUserId;
-      }
-
-      return row.fromUserId;
-    });
+    const data = allAcceptedRequest
+      .filter((row) => row.fromUserId && row.toUserId) // skip if user was deleted
+      .map((row) => {
+        if (row.fromUserId._id.toString() === loggedInUser._id.toString()) {
+          return row.toUserId;
+        }
+        return row.fromUserId;
+      });
 
     res.json({ message: "Fetched all accepted requests", data });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    next(error);
   }
 });
 
@@ -65,28 +66,28 @@ userRouter.get("/user/feed", userAuth, async (req, res) => {
 
     const skip = (page - 1) * limit;
 
+    // Only exclude users with active/permanent statuses — ignored users can reappear
     const connectionRequests = await ConnectionRequestModel.find({
       $or: [{ fromUserId: loggedInUser._id }, { toUserId: loggedInUser._id }],
+      status: { $in: ["interested", "accepted", "rejected"] },
     }).select("fromUserId toUserId");
 
     const hideUsersFromFeed = new Set();
+    hideUsersFromFeed.add(loggedInUser._id.toString());
 
-    connectionRequests.forEach((req) => {
-      hideUsersFromFeed.add(req.fromUserId.toString());
-      hideUsersFromFeed.add(req.toUserId.toString());
+    connectionRequests.forEach((request) => {
+      hideUsersFromFeed.add(request.fromUserId.toString());
+      hideUsersFromFeed.add(request.toUserId.toString());
     });
 
     const users = await UserModel.find({
-      $and: [
-        { _id: { $nin: Array.from(hideUsersFromFeed) } },
-        { _id: { $ne: loggedInUser._id } },
-      ],
+      _id: { $nin: Array.from(hideUsersFromFeed) },
     })
       .select(USER_POPULATE_DATA)
       .skip(skip)
       .limit(limit);
 
-    res.json({data: users});
+    res.json({ data: users });
   } catch (error) {
     res.status(400).json({ message: error.message });
   }

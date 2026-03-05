@@ -34,3 +34,9 @@ connectDb()
   .catch((err) => {
     console.error("Db is not connected!! : " + err.message);
   });
+
+// Global error handler — catches any unhandled errors in routes
+app.use((err, req, res, next) => {
+  console.error("Unhandled Error:", err);
+  res.status(500).json({ message: err.message || "Internal Server Error" });
+});

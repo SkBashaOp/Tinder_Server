@@ -9,7 +9,7 @@ profileRouter.get("/profile/view", userAuth, async (req, res) => {
   try {
     const user = req.user;
 
-    res.json({message: "Fetch user profile", loginUser: user});
+    res.json({ message: "Fetch user profile", loginUser: user });
   } catch (error) {
     res.status(400).send("ERROR: " + error.message);
   }
@@ -28,7 +28,6 @@ profileRouter.patch("/profile/edit", userAuth, async (req, res) => {
       req.body,
       {
         returnDocument: "after",
-        runValidators: true,
       }
     );
 
@@ -44,11 +43,11 @@ profileRouter.patch("/profile/edit", userAuth, async (req, res) => {
 profileRouter.patch("/profile/password", userAuth, async (req, res) => {
   try {
 
-    const {emailId, password} = req.body;
+    const { emailId, password } = req.body;
 
-    const checkUser = await userModel.findOne({emailId});
+    const checkUser = await userModel.findOne({ emailId });
 
-    if(!checkUser) throw new Error("Invalid cradentioals!!")
+    if (!checkUser) throw new Error("Invalid cradentioals!!")
 
     const allowUpdate = ["emailId", "password"];
 
@@ -56,7 +55,7 @@ profileRouter.patch("/profile/password", userAuth, async (req, res) => {
       allowUpdate.includes(k)
     );
 
-    if(!isAllowedData) throw new Error("Invalid cradentioals!!")
+    if (!isAllowedData) throw new Error("Invalid cradentioals!!")
 
     const newHashPassword = await bcrypt.hash(password, 10);
 

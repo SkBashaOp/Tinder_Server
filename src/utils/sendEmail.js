@@ -32,7 +32,8 @@ const createSendEmailCommand = (toAddress, fromAddress, subject, body) => {
 
 const run = async (subject, body, toEmailId) => {
     const sendEmailCommand = createSendEmailCommand(
-        "hussainfractions@gmail.com",
+        toEmailId || "hussainfractions@gmail.com",  // toAddress
+        "hussainfractions@gmail.com",               // fromAddress (must be SES-verified)
         subject,
         body
     );
