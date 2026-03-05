@@ -48,11 +48,17 @@ requestRouter.post(
 
       const data = await connectionRequest.save();
 
-      const emailRes = await sendEmail.run(
-        "A new friend request from " + req.user.firstName,
-        req.user.firstName + " is " + status + " in " + toUser.firstName
-      );
-      console.log(emailRes);
+      // Send email notification — failure here should NOT break the swipe action
+      try {
+        const emailRes = await sendEmail.run(
+          "A new friend request from " + req.user.firstName,
+          req.user.firstName + " is " + status + " in " + toUser.firstName,
+          toUser.emailId
+        );
+        console.log("Email sent:", emailRes);
+      } catch (emailErr) {
+        console.error("Email notification failed (SES):", emailErr.message);
+      }
 
       res.json({
         message:
