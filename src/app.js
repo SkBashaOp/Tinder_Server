@@ -13,7 +13,7 @@ const paymentRouter = require("./routes/payment");
 
 app.use(cors({
   origin: "http://localhost:5173",
-  credentials: true
+  credentials: true,
 }));
 
 app.use(express.json({ limit: "10mb" }));

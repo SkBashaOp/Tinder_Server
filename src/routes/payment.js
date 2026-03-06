@@ -7,6 +7,7 @@ const User = require("../models/user");
 const { membershipAmount } = require("../utils/constants");
 const {
   validateWebhookSignature,
+  validatePaymentVerification,
 } = require("razorpay/dist/utils/razorpay-utils");
 
 paymentRouter.post("/payment/create", userAuth, async (req, res) => {
@@ -78,7 +79,7 @@ paymentRouter.post("/payment/webhook", async (req, res) => {
     const user = await User.findOne({ _id: payment.userId });
     user.isPremium = true;
     user.membershipType = payment.notes.membershipType;
-    console.log("User saved");
+    // console.log("User saved");
 
     await user.save();
 
@@ -97,9 +98,43 @@ paymentRouter.post("/payment/webhook", async (req, res) => {
   }
 });
 
+paymentRouter.post("/payment/verify", userAuth, async (req, res) => {
+  try {
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+
+    const isValid = validatePaymentVerification(
+      { order_id: razorpay_order_id, payment_id: razorpay_payment_id },
+      razorpay_signature,
+      process.env.RAZORPAY_KEY_SECRET
+    );
+
+    if (!isValid) {
+      return res.status(400).json({ msg: "Payment verification failed" });
+    }
+
+    const payment = await Payment.findOne({ orderId: razorpay_order_id });
+    if (!payment) {
+      return res.status(400).json({ msg: "Payment not found" });
+    }
+
+    payment.status = "captured";
+    payment.paymentId = razorpay_payment_id;
+    await payment.save();
+
+    const user = req.user;
+    user.isPremium = true;
+    user.membershipType = payment.notes.membershipType;
+    await user.save();
+
+    return res.status(200).json({ msg: "Payment verified successfully" });
+  } catch (err) {
+    return res.status(500).json({ msg: err.message });
+  }
+});
+
 paymentRouter.get("/premium/verify", userAuth, async (req, res) => {
   const user = req.user.toJSON();
-  console.log(user);
+  // console.log(user);
   if (user.isPremium) {
     return res.json({ ...user });
   }
