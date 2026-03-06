@@ -30,7 +30,7 @@ const userSchema = new mongoose.Schema(
       maxLength: [70, "length is exceding to max requre char!!"],
       validate(val) {
         if (!validator.isEmail(val)) {
-          throw new Error("Envalid email address: " + val);
+          throw new Error("Invalid email address: " + val);
         }
       },
     },
@@ -60,6 +60,13 @@ const userSchema = new mongoose.Schema(
           throw new Error(`${val} is not a valid gender!`);
         }
       },
+    },
+    isPremium: {
+      type: Boolean,
+      default: false,
+    },
+    membershipType: {
+      type: String,
     },
     photoUrl: {
       type: String,
