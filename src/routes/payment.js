@@ -27,7 +27,7 @@ paymentRouter.post("/payment/create", userAuth, async (req, res) => {
     });
 
     // save it in my database
-    console.log(order);
+    // console.log(order);
 
     const payment = new Payment({
       userId: req.user._id,
@@ -48,7 +48,7 @@ paymentRouter.post("/payment/create", userAuth, async (req, res) => {
   }
 });
 
-//no user auth required since this is accessed by razorpay server
+//no user auth required since this is accessed by razorpay
 paymentRouter.post("/payment/webhook", async (req, res) => {
   try {
     console.log("Webhook Called");
