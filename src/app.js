@@ -10,10 +10,15 @@ const profileRouter = require("./routes/profile");
 const requestRouter = require("./routes/request");
 const userRouter = require("./routes/user");
 const paymentRouter = require("./routes/payment");
+const initializeSocket = require("./utils/socket");
+const chatRouter = require("./routes/chat");
+const http = require("http");
+
 
 app.use(cors({
   origin: [
     "http://localhost:5173",
+    "http://127.0.0.1:5173",
     "https://devtinder.singles",
     "http://devtinder.singles"
   ],
@@ -30,11 +35,15 @@ app.use("/", profileRouter);
 app.use("/", requestRouter);
 app.use("/", userRouter);
 app.use("/", paymentRouter);
+app.use("/", chatRouter);
+
+const server = http.createServer(app);
+initializeSocket(server);
 
 connectDb()
   .then(() => {
     console.log("Db is connected");
-    app.listen(3000, () => {
+    server.listen(3000, () => {
       console.log("Server is running on port 3000...");
     });
   })
