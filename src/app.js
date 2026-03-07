@@ -12,7 +12,11 @@ const userRouter = require("./routes/user");
 const paymentRouter = require("./routes/payment");
 
 app.use(cors({
-  origin: "http://localhost:5173",
+  origin: [
+    "http://localhost:5173",
+    "https://devtinder.singles",
+    "http://devtinder.singles"
+  ],
   credentials: true,
 }));
 

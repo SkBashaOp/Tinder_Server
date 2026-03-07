@@ -15,10 +15,17 @@ paymentRouter.post("/payment/create", userAuth, async (req, res) => {
     const { membershipType } = req.body;
     const { firstName, lastName, emailId } = req.user;
 
+    let amount = membershipAmount[membershipType];
+
+    // If upgrading silver -> gold
+    if (req.user.membershipType && req.user.membershipType.includes("silver") && membershipType.includes("gold")) {
+      amount = membershipAmount[membershipType] - membershipAmount.silver_monthly;
+    }
+
     const order = await razorpayInstance.orders.create({
-      amount: membershipAmount[membershipType] * 100,
+      amount: amount * 100,
       currency: "INR",
-      receipt: "receipt#1",
+      receipt: "receipt#" + Date.now(),
       notes: {
         firstName,
         lastName,
