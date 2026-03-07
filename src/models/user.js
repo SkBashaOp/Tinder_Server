@@ -85,6 +85,17 @@ const userSchema = new mongoose.Schema(
     skills: {
       type: [String],
     },
+    boostActive: {
+      type: Boolean,
+      default: false,
+    },
+    boostExpiresAt: {
+      type: Date,
+    },
+    boostCount: {
+      type: Number,
+      default: 0,
+    },
   },
   { timestamps: true }
 );

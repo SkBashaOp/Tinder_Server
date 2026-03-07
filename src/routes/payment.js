@@ -84,11 +84,22 @@ paymentRouter.post("/payment/webhook", async (req, res) => {
     console.log("Payment saved");
 
     const user = await User.findOne({ _id: payment.userId });
-    user.isPremium = true;
-    user.membershipType = payment.notes.membershipType;
-    // console.log("User saved");
 
-    await user.save();
+    let updateData = {};
+    if (payment.notes.membershipType === "boost") {
+      updateData = {
+        boostActive: true,
+        boostCount: (user.boostCount || 0) + 1,
+        boostExpiresAt: new Date(Date.now() + 30 * 60 * 1000)
+      };
+    } else {
+      updateData = {
+        isPremium: true,
+        membershipType: payment.notes.membershipType
+      };
+    }
+
+    await User.findByIdAndUpdate(payment.userId, updateData);
 
     // Update the user as premium
 
@@ -129,11 +140,24 @@ paymentRouter.post("/payment/verify", userAuth, async (req, res) => {
     await payment.save();
 
     const user = req.user;
-    user.isPremium = true;
-    user.membershipType = payment.notes.membershipType;
-    await user.save();
 
-    return res.status(200).json({ msg: "Payment verified successfully" });
+    let updateData = {};
+    if (payment.notes.membershipType === "boost") {
+      updateData = {
+        boostActive: true,
+        boostCount: (user.boostCount || 0) + 1,
+        boostExpiresAt: new Date(Date.now() + 30 * 60 * 1000)
+      };
+    } else {
+      updateData = {
+        isPremium: true,
+        membershipType: payment.notes.membershipType
+      };
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(user._id, updateData, { new: true });
+
+    return res.status(200).json({ msg: "Payment verified successfully", user: updatedUser.toJSON() });
   } catch (err) {
     return res.status(500).json({ msg: err.message });
   }

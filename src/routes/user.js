@@ -79,10 +79,18 @@ userRouter.get("/user/feed", userAuth, async (req, res) => {
       hideUsersFromFeed.add(request.toUserId.toString());
     });
 
+    // 1. Expire old boosts before querying feed
+    await UserModel.updateMany(
+      { boostExpiresAt: { $lt: new Date() }, boostActive: true },
+      { $set: { boostActive: false } }
+    );
+
+    // 2. Query users, sorting boosted ones to the top
     const users = await UserModel.find({
       _id: { $nin: Array.from(hideUsersFromFeed) },
     })
       .select(USER_POPULATE_DATA)
+      .sort({ boostActive: -1, createdAt: -1 }) // Boosted users first
       .skip(skip)
       .limit(limit);
 
