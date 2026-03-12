@@ -113,4 +113,18 @@ userRouter.get("/user/:id", userAuth, async (req, res, next) => {
   }
 });
 
+userRouter.post("/save-fcm-token", userAuth, async (req, res, next) => {
+  try {
+    const { token } = req.body;
+    if (!token) return res.status(400).json({ message: "Token is required" });
+
+    req.user.fcmToken = token;
+    await req.user.save();
+
+    res.json({ message: "FCM token saved successfully" });
+  } catch (error) {
+    next(error);
+  }
+});
+
 module.exports = userRouter;
