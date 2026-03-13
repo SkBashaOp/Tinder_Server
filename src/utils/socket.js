@@ -58,24 +58,32 @@ const initializeSocket = (server) => {
 
                     io.to(roomId).emit("messageReceived", { firstName, lastName, photoUrl, text, senderId: userId });
 
-                    // Send Push Notification via Firebase
-                    try {
-                        const receiver = await User.findById(targetUserId);
-                        if (receiver && receiver.fcmToken && admin) {
-                            console.log("Sending push notification to target:", targetUserId, "Token:", receiver.fcmToken);
-                            await admin.messaging().send({
-                                token: receiver.fcmToken,
-                                notification: {
-                                    title: `New message from ${firstName}`,
-                                    body: text
-                                }
-                            });
-                            console.log("✅ Push notification sent successfully to Firebase!");
-                        } else {
-                            console.log("⚠️ Could not send push notification: Receiver, fcmToken, or admin missing.");
+                    // Only send Push Notification if target user is NOT in the chat room
+                    // (they'll already see the message in real-time via socket)
+                    const targetSocketId = onlineUsers.get(targetUserId);
+                    const targetInRoom = targetSocketId && io.sockets.adapter.rooms.get(roomId)?.has(targetSocketId);
+
+                    if (!targetInRoom) {
+                        try {
+                            const receiver = await User.findById(targetUserId);
+                            if (receiver && receiver.fcmToken && admin) {
+                                console.log("Sending push notification to target:", targetUserId, "Token:", receiver.fcmToken);
+                                await admin.messaging().send({
+                                    token: receiver.fcmToken,
+                                    notification: {
+                                        title: `New message from ${firstName}`,
+                                        body: text
+                                    }
+                                });
+                                console.log("✅ Push notification sent successfully to Firebase!");
+                            } else {
+                                console.log("⚠️ Could not send push notification: Receiver, fcmToken, or admin missing.");
+                            }
+                        } catch (pushErr) {
+                            console.error("❌ Push notification failed:", pushErr);
                         }
-                    } catch (pushErr) {
-                        console.error("❌ Push notification failed:", pushErr);
+                    } else {
+                        console.log("ℹ️ Target user is in the chat room, skipping push notification.");
                     }
                 } catch (err) {
                     console.error("Socket save error:", err);
