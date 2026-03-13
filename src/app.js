@@ -19,7 +19,11 @@ app.use(cors({
   origin: [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
-    "https://tinder-web-lac.vercel.app"
+    "https://tinder-web-lac.vercel.app",
+    "https://devfind.online",
+    "http://devfind.online",
+    "https://16.112.4.74",
+    "http://16.112.4.74"
   ],
   credentials: true,
 }));
