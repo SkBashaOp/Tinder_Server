@@ -12,6 +12,7 @@ const userRouter = require("./routes/user");
 const paymentRouter = require("./routes/payment");
 const initializeSocket = require("./utils/socket");
 const chatRouter = require("./routes/chat");
+const clerkRouter = require("./routes/clerk");
 const http = require("http");
 
 
@@ -41,6 +42,7 @@ app.use("/", requestRouter);
 app.use("/", userRouter);
 app.use("/", paymentRouter);
 app.use("/", chatRouter);
+app.use("/", clerkRouter); // Clerk auth routes (new — does not affect existing routes)
 
 const server = http.createServer(app);
 initializeSocket(server);

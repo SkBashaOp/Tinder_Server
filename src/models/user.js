@@ -34,17 +34,18 @@ const userSchema = new mongoose.Schema(
         }
       },
     },
+    clerkId: {
+      type: String,
+      unique: true,
+      sparse: true,
+      trim: true,
+    },
     password: {
       type: String,
-      required: true,
       trim: true,
       maxLength: [70, "length is exceding to max require char!!"],
-      // match: [
-      //   /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/,
-      //   "Please fill a valid email address",
-      // ],
       validate(val) {
-        if (!validator.isStrongPassword(val)) {
+        if (val && !validator.isStrongPassword(val)) {
           throw new Error(val + "Not a strong password");
         }
       },
@@ -96,6 +97,10 @@ const userSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    github: {
+      type: String,
+      default: "",
+    },
     fcmToken: {
       type: String,
     },
@@ -132,6 +137,11 @@ userSchema.methods.getJWT = async function () {
 userSchema.methods.validatePassword = async function (passwordInputByUser) {
   const user = this;
   const hashedPassword = user.password;
+  
+  if (!hashedPassword) {
+    return false; // Users without a password cannot log in via traditional method
+  }
+
   const isPasswordValid = await bcrypt.compare(
     passwordInputByUser,
     hashedPassword

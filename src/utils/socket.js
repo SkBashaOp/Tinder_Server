@@ -3,6 +3,7 @@ const crypto = require("crypto");
 const { Chat } = require("../models/chat");
 const Message = require("../models/message");
 const User = require("../models/user");
+
 const admin = require("./firebaseAdmin");
 
 const getSecretRoomId = (userId, targetUserId) => {
@@ -65,7 +66,7 @@ const initializeSocket = (server) => {
 
                     if (!targetInRoom) {
                         try {
-                            const receiver = await User.findById(targetUserId);
+                            let receiver = await User.findOne({ _id: targetUserId });
                             if (receiver && receiver.fcmToken && admin) {
                                 console.log("Sending push notification to target:", targetUserId, "Token:", receiver.fcmToken);
                                 await admin.messaging().send({
