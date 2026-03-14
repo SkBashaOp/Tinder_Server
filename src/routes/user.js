@@ -63,34 +63,30 @@ userRouter.get("/user/feed", userAuth, async (req, res) => {
     let limit = parseInt(req.query.limit) || 50;
 
     limit = limit > 50 ? 50 : limit;
-
     const skip = (page - 1) * limit;
 
-    // Exclude users where ANY connection request exists (any swipe direction/status)
-    const connectionRequests = await ConnectionRequestModel.find({
-      $or: [{ fromUserId: loggedInUser._id }, { toUserId: loggedInUser._id }],
-    }).select("fromUserId toUserId");
+    // Get users that the logged-in user has already swiped on
+    const swipedUsers = await ConnectionRequestModel.find({
+      fromUserId: loggedInUser._id,
+    }).select("toUserId");
 
-    const hideUsersFromFeed = new Set();
-    hideUsersFromFeed.add(loggedInUser._id.toString());
+    const hideUsersFromFeed = swipedUsers.map((req) => req.toUserId.toString());
 
-    connectionRequests.forEach((request) => {
-      hideUsersFromFeed.add(request.fromUserId.toString());
-      hideUsersFromFeed.add(request.toUserId.toString());
-    });
+    // Also hide yourself
+    hideUsersFromFeed.push(loggedInUser._id.toString());
 
-    // 1. Expire old boosts before querying feed
+    // Expire old boosts
     await UserModel.updateMany(
       { boostExpiresAt: { $lt: new Date() }, boostActive: true },
       { $set: { boostActive: false } }
     );
 
-    // 2. Query users, sorting boosted ones to the top
+    // Feed query
     const users = await UserModel.find({
-      _id: { $nin: Array.from(hideUsersFromFeed) },
+      _id: { $nin: hideUsersFromFeed },
     })
       .select(USER_POPULATE_DATA)
-      .sort({ boostActive: -1, createdAt: -1 }) // Boosted users first
+      .sort({ boostActive: -1, createdAt: -1 })
       .skip(skip)
       .limit(limit);
 

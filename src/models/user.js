@@ -108,6 +108,8 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+userSchema.index({ boostActive: 1, createdAt: -1 });
+
 userSchema.pre("save", function (next) {
   if (!this.photoUrl) {
     if (this.gender === "male") {

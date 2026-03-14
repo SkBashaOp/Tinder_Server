@@ -28,4 +28,8 @@ connectionRequestSchema.index(
   { fromUserId: 1, toUserId: 1 },
   { unique: true }
 );
+
+connectionRequestSchema.index({ fromUserId: 1 });
+connectionRequestSchema.index({ toUserId: 1 });
+connectionRequestSchema.index({ status: 1 });
 module.exports = new mongoose.model("ConnectionRequest", connectionRequestSchema);
