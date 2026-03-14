@@ -1,3 +1,5 @@
+const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
+global.fetch = fetch;
 require("dotenv").config();
 require("./utils/cronjob.js");
 const express = require("express");
