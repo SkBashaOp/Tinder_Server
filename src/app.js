@@ -15,6 +15,7 @@ const paymentRouter = require("./routes/payment");
 const initializeSocket = require("./utils/socket");
 const chatRouter = require("./routes/chat");
 const clerkRouter = require("./routes/clerk");
+const webhookRouter = require("./routes/webhook");
 const http = require("http");
 
 
@@ -32,6 +33,8 @@ app.use(cors({
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
 app.options("*", cors());
+
+app.use("/", webhookRouter); // Webhook must be before express.json() for raw body verification
 
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));

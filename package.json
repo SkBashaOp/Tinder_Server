@@ -33,6 +33,7 @@
     "nodemailer": "^8.0.2",
     "razorpay": "^2.9.6",
     "socket.io": "^4.8.3",
+    "svix": "^1.88.0",
     "validator": "^13.12.0"
   }
 }
