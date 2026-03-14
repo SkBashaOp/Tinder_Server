@@ -18,7 +18,15 @@ router.post("/webhooks/clerk", express.raw({ type: "application/json" }), async 
 
       // Extract details
       const clerkId = user.id;
-      const emailId = user.email_addresses[0]?.email_address;
+
+      let emailId = null;
+      if (user.email_addresses && user.email_addresses.length > 0) {
+        const primaryEmail = user.email_addresses.find(
+          (e) => e.id === user.primary_email_address_id
+        );
+        emailId = primaryEmail ? primaryEmail.email_address : user.email_addresses[0].email_address;
+      }
+
       const firstName = user.first_name || "Dev";
       const lastName = user.last_name || "";
       const photoUrl = user.image_url;
