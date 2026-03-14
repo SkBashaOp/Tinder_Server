@@ -27,6 +27,11 @@ router.post("/webhooks/clerk", express.raw({ type: "application/json" }), async 
         emailId = primaryEmail ? primaryEmail.email_address : user.email_addresses[0].email_address;
       }
 
+      // fallback if webhook test event has no email
+      if (!emailId) {
+        emailId = `${clerkId}@clerk.dev`;
+      }
+
       const firstName = user.first_name || "Dev";
       const lastName = user.last_name || "";
       const photoUrl = user.image_url;

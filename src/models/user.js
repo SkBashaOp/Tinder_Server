@@ -19,7 +19,7 @@ const userSchema = new mongoose.Schema(
     },
     emailId: {
       type: String,
-      required: false,
+      required: true,
       unique: true,
       lowercase: true,
       trim: true,
