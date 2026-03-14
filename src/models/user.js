@@ -19,7 +19,7 @@ const userSchema = new mongoose.Schema(
     },
     emailId: {
       type: String,
-      required: true,
+      required: false,
       unique: true,
       lowercase: true,
       trim: true,
@@ -137,7 +137,7 @@ userSchema.methods.getJWT = async function () {
 userSchema.methods.validatePassword = async function (passwordInputByUser) {
   const user = this;
   const hashedPassword = user.password;
-  
+
   if (!hashedPassword) {
     return false; // Users without a password cannot log in via traditional method
   }
