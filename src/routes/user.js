@@ -65,32 +65,86 @@ userRouter.get("/user/feed", userAuth, async (req, res) => {
     limit = limit > 50 ? 50 : limit;
     const skip = (page - 1) * limit;
 
-    // Get users that the logged-in user has already swiped on
-    const swipedUsers = await ConnectionRequestModel.find({
-      fromUserId: loggedInUser._id,
-    }).select("toUserId");
-
-    const hideUsersFromFeed = swipedUsers.map((req) => req.toUserId.toString());
-
-    // Also hide yourself
-    hideUsersFromFeed.push(loggedInUser._id.toString());
-
-    // Expire old boosts
+    // Expire boosts first
     await UserModel.updateMany(
       { boostExpiresAt: { $lt: new Date() }, boostActive: true },
       { $set: { boostActive: false } }
     );
 
-    // Feed query
-    const users = await UserModel.find({
-      _id: { $nin: hideUsersFromFeed },
-    })
-      .select(USER_POPULATE_DATA)
-      .sort({ boostActive: -1, createdAt: -1 })
-      .skip(skip)
-      .limit(limit);
+    const users = await UserModel.aggregate([
+      {
+        $match: {
+          _id: { $ne: loggedInUser._id }
+        }
+      },
+
+      // Join connection requests
+      {
+        $lookup: {
+          from: "connectionrequests",
+          let: { userId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $or: [
+                    {
+                      $and: [
+                        { $eq: ["$fromUserId", loggedInUser._id] },
+                        { $eq: ["$toUserId", "$$userId"] }
+                      ]
+                    },
+                    {
+                      $and: [
+                        { $eq: ["$toUserId", loggedInUser._id] },
+                        { $eq: ["$fromUserId", "$$userId"] }
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          as: "connectionData"
+        }
+      },
+
+      // Remove users already swiped/connected
+      {
+        $match: {
+          connectionData: { $size: 0 }
+        }
+      },
+
+      // Select fields
+      {
+        $project: {
+          firstName: 1,
+          lastName: 1,
+          age: 1,
+          gender: 1,
+          about: 1,
+          skills: 1,
+          photoUrl: 1,
+          boostActive: 1,
+          createdAt: 1
+        }
+      },
+
+      // Sort boosted users first
+      {
+        $sort: {
+          boostActive: -1,
+          createdAt: -1
+        }
+      },
+
+      { $skip: skip },
+      { $limit: limit }
+    ]);
 
     res.json({ data: users });
+
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
