@@ -26,7 +26,7 @@ clerkRouter.post("/clerk/create-profile", clerkAuth, async (req, res) => {
     if (!user) {
       // 2. Check if a standard user exists with this email - if so, link them!
       user = await User.findOne({ emailId });
-      
+
       if (user) {
         // Link the existing account to Clerk
         user.clerkId = clerkId;
@@ -160,7 +160,7 @@ clerkRouter.get("/clerk/feed", clerkAuth, async (req, res) => {
 clerkRouter.post("/clerk/save-fcm-token", clerkAuth, async (req, res) => {
   try {
     const { token } = req.body;
-    
+
     if (!token) {
       return res.status(400).json({ message: "Token is required" });
     }
@@ -223,7 +223,7 @@ clerkRouter.delete("/clerk/request/remove/:userId", clerkAuth, async (req, res) 
   try {
     const user = await User.findOne({ clerkId: req.clerkId });
     if (!user) return res.status(404).json({ message: "User not found" });
-    
+
     const loggedInUserId = user._id;
     const { userId } = req.params;
 
@@ -373,7 +373,7 @@ clerkRouter.get("/clerk/user/:id", clerkAuth, async (req, res) => {
  */
 clerkRouter.get("/clerk/chat/:targetUserId", clerkAuth, async (req, res) => {
   const { targetUserId } = req.params;
-  
+
   try {
     const user = await User.findOne({ clerkId: req.clerkId });
     if (!user) return res.status(404).json({ message: "User not found" });
@@ -514,7 +514,7 @@ clerkRouter.get("/clerk/premium/verify", clerkAuth, async (req, res) => {
   try {
     const userDoc = await User.findOne({ clerkId: req.clerkId });
     if (!userDoc) return res.status(404).json({ message: "User not found" });
-    
+
     const user = userDoc.toJSON();
     res.json({ ...user });
   } catch (error) {
