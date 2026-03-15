@@ -6,6 +6,8 @@ const express = require("express");
 const app = express();
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
 const { connectDb } = require("./config/database");
 const authRouter = require("./routes/auth");
 const profileRouter = require("./routes/profile");
@@ -18,7 +20,14 @@ const clerkRouter = require("./routes/clerk");
 const webhookRouter = require("./routes/webhook");
 const http = require("http");
 
+app.use(helmet());
 
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 200
+});
+
+app.use(limiter);
 app.use(cors({
   origin: [
     "http://localhost:5173",
@@ -36,8 +45,8 @@ app.options("*", cors());
 
 app.use("/", webhookRouter); // Webhook must be before express.json() for raw body verification
 
-app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ limit: "10mb", extended: true }));
+app.use(express.json({ limit: "10kb" }));
+app.use(express.urlencoded({ limit: "10kb", extended: true }));
 app.use(cookieParser());
 
 // API's
