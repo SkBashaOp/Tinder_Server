@@ -22,5 +22,5 @@ jobs:
             git fetch origin
             git reset --hard origin/main
             npm install
-            npm install -g pm2
+            sudo npm install -g pm2
             pm2 reload devfind-api || pm2 start src/app.js --name devfind-api
