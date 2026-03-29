@@ -13,7 +13,7 @@
     "Express",
     "Mongoose"
   ],
-  "author": "Basha",
+  "author": "Shaik Basha",
   "license": "ISC",
   "dependencies": {
     "@aws-sdk/client-ses": "^3.1002.0",
