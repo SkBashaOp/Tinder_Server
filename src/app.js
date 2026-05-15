@@ -4,6 +4,7 @@ require("dotenv").config();
 require("./utils/cronjob.js");
 const express = require("express");
 const app = express();
+app.set("trust proxy", 1);
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
 const helmet = require("helmet");

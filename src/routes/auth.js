@@ -29,7 +29,12 @@ authRouter.post("/signup", async (req, res) => {
     const token = await user.getJWT();
 
     // adding token to cookie
-    res.cookie("token", token, { maxAge: 60000 * 60 * 24 * 7 });
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "None",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
 
     res
       .status(200)
@@ -63,7 +68,12 @@ authRouter.post("/login", async (req, res) => {
       const token = await user.getJWT();
 
       // adding token to cookie
-      res.cookie("token", token, { maxAge: 60000 * 60 * 24 * 7 });
+      res.cookie("token", token, {
+        httpOnly: true,
+        secure: true,
+        sameSite: "None",
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
       res.json({ message: "Login successfuly!", loginUser: user });
     } else {
       throw new Error("Invalid credentials.");
@@ -74,7 +84,14 @@ authRouter.post("/login", async (req, res) => {
 });
 
 authRouter.post("/logout", async (req, res) => {
-  res.cookie("token", null, { maxAge: 0 }).send("You are logged out now!!");
+  res.cookie("token", "", {
+    httpOnly: true,
+    secure: true,
+    sameSite: "None",
+    expires: new Date(0),
+  });
+
+  res.send("You are logged out now!!");
 });
 
 module.exports = authRouter;
