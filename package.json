@@ -1,0 +1,40 @@
+{
+  "name": "devfind",
+  "version": "1.0.0",
+  "description": "tinder for devs",
+  "main": "app.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "nodemon src/app.js"
+  },
+  "keywords": [
+    "node",
+    "JavaScript",
+    "Express",
+    "Mongoose"
+  ],
+  "author": "Shaik Basha",
+  "license": "ISC",
+  "dependencies": {
+    "@aws-sdk/client-ses": "^3.1002.0",
+    "bcrypt": "^5.1.1",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "crypto-js": "^4.2.0",
+    "date-fns": "^4.1.0",
+    "dotenv": "^17.3.1",
+    "express": "^4.21.0",
+    "express-rate-limit": "^8.3.1",
+    "firebase-admin": "^11.11.1",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.6.3",
+    "multer": "^2.1.1",
+    "node-cron": "^4.2.1",
+    "node-fetch": "^3.3.2",
+    "nodemailer": "^8.0.2",
+    "razorpay": "^2.9.6",
+    "socket.io": "^4.8.3",
+    "validator": "^13.12.0"
+  }
+}

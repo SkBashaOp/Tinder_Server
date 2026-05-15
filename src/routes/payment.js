@@ -1,0 +1,175 @@
+const express = require("express");
+const { userAuth } = require("../middlewares/userAuth");
+const paymentRouter = express.Router();
+const razorpayInstance = require("../utils/razorpay");
+const Payment = require("../models/payment");
+const User = require("../models/user");
+const { membershipAmount } = require("../utils/constants");
+const {
+  validateWebhookSignature,
+  validatePaymentVerification,
+} = require("razorpay/dist/utils/razorpay-utils");
+
+paymentRouter.post("/payment/create", userAuth, async (req, res) => {
+  try {
+    const { membershipType } = req.body;
+    const { firstName, lastName, emailId } = req.user;
+
+    let amount = membershipAmount[membershipType];
+
+    // If upgrading silver -> gold
+    if (req.user.membershipType && req.user.membershipType.includes("silver") && membershipType.includes("gold")) {
+      amount = membershipAmount[membershipType] - membershipAmount.silver_monthly;
+    }
+
+    const order = await razorpayInstance.orders.create({
+      amount: amount * 100,
+      currency: "INR",
+      receipt: "receipt#" + Date.now(),
+      notes: {
+        firstName,
+        lastName,
+        emailId,
+        membershipType: membershipType,
+      },
+    });
+
+    // save it in my database
+    // console.log(order);
+
+    const payment = new Payment({
+      userId: req.user._id,
+      orderId: order.id,
+      status: order.status,
+      amount: order.amount,
+      currency: order.currency,
+      receipt: order.receipt,
+      notes: order.notes,
+    });
+
+    const savedPayment = await payment.save();
+
+    // Return back my order details to frontend
+    res.json({ ...savedPayment.toJSON(), keyId: process.env.RAZORPAY_KEY_ID });
+  } catch (err) {
+    return res.status(500).json({ msg: err.message });
+  }
+});
+
+//no user auth required since this is accessed by razorpay
+paymentRouter.post("/payment/webhook", async (req, res) => {
+  try {
+    console.log("Webhook Called");
+    const webhookSignature = req.get("X-Razorpay-Signature");
+    console.log("Webhook Signature", webhookSignature);
+
+    const isWebhookValid = validateWebhookSignature(
+      JSON.stringify(req.body),
+      webhookSignature,
+      process.env.RAZORPAY_WEBHOOK_SECRET
+    );
+
+    if (!isWebhookValid) {
+      console.log("INvalid Webhook Signature");
+      return res.status(400).json({ msg: "Webhook signature is invalid" });
+    }
+    console.log("Valid Webhook Signature");
+
+    // Udpate my payment Status in DB
+    const paymentDetails = req.body.payload.payment.entity;
+
+    const payment = await Payment.findOne({ orderId: paymentDetails.order_id });
+    payment.status = paymentDetails.status;
+    await payment.save();
+    console.log("Payment saved");
+
+    const user = await User.findOne({ _id: payment.userId });
+
+    let updateData = {};
+    if (payment.notes.membershipType === "boost") {
+      updateData = {
+        boostActive: true,
+        boostCount: (user.boostCount || 0) + 1,
+        boostExpiresAt: new Date(Date.now() + 30 * 60 * 1000)
+      };
+    } else {
+      updateData = {
+        isPremium: true,
+        membershipType: payment.notes.membershipType
+      };
+    }
+
+    await User.findByIdAndUpdate(payment.userId, updateData);
+
+    // Update the user as premium
+
+    // if (req.body.event == "payment.captured") {
+    // }
+    // if (req.body.event == "payment.failed") {
+    // }
+
+    // return success response to razorpay
+
+    return res.status(200).json({ msg: "Webhook received successfully" });
+  } catch (err) {
+    return res.status(500).json({ msg: err.message });
+  }
+});
+
+paymentRouter.post("/payment/verify", userAuth, async (req, res) => {
+  try {
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+
+    const isValid = validatePaymentVerification(
+      { order_id: razorpay_order_id, payment_id: razorpay_payment_id },
+      razorpay_signature,
+      process.env.RAZORPAY_KEY_SECRET
+    );
+
+    if (!isValid) {
+      return res.status(400).json({ msg: "Payment verification failed" });
+    }
+
+    const payment = await Payment.findOne({ orderId: razorpay_order_id });
+    if (!payment) {
+      return res.status(400).json({ msg: "Payment not found" });
+    }
+
+    payment.status = "captured";
+    payment.paymentId = razorpay_payment_id;
+    await payment.save();
+
+    const user = req.user;
+
+    let updateData = {};
+    if (payment.notes.membershipType === "boost") {
+      updateData = {
+        boostActive: true,
+        boostCount: (user.boostCount || 0) + 1,
+        boostExpiresAt: new Date(Date.now() + 30 * 60 * 1000)
+      };
+    } else {
+      updateData = {
+        isPremium: true,
+        membershipType: payment.notes.membershipType
+      };
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(user._id, updateData, { new: true });
+
+    return res.status(200).json({ msg: "Payment verified successfully", user: updatedUser.toJSON() });
+  } catch (err) {
+    return res.status(500).json({ msg: err.message });
+  }
+});
+
+paymentRouter.get("/premium/verify", userAuth, async (req, res) => {
+  const user = req.user.toJSON();
+  // console.log(user);
+  if (user.isPremium) {
+    return res.json({ ...user });
+  }
+  return res.json({ ...user });
+});
+
+module.exports = paymentRouter;

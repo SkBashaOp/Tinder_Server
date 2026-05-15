@@ -1,0 +1,26 @@
+name: Deploy DevFind Backend
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+
+          script: |
+            cd ~/Tinder_Server
+            git fetch origin
+            git reset --hard origin/main
+            npm install
+            sudo npm install -g pm2
+            pm2 reload devfind-api || pm2 start src/app.js --name devfind-api
